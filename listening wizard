@@ -1,0 +1,62 @@
+#include <Adafruit_NeoPixel.h>
+
+#define LED_PIN 9
+
+#define LED_COUNT 60
+
+#define BRIGHTNESS 50
+
+const int sampleWindow = 250;
+unsigned int knock;
+Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRBW + NEO_KHZ800);
+
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(9600);
+  strip.begin();           // INITIALIZE NeoPixel strip object (REQUIRED)
+  strip.show();            // Turn OFF all pixels ASAP
+  strip.setBrightness(BRIGHTNESS);
+
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  unsigned long start = millis();
+  unsigned int peakToPeak = 0;
+
+  unsigned int signalMax = 0;
+  unsigned int signalMin = 1024;
+
+  while (millis() - start < sampleWindow) {
+    knock = analogRead(0);
+    if (knock < 1024) {
+      if (knock > signalMax) {
+        signalMax = knock;
+      } else if (knock < signalMin) {
+        signalMin = knock;
+      }
+    }
+  }
+  peakToPeak = signalMax - signalMin;
+  double volts = (peakToPeak * 3.3) / 1024;
+  Serial.println(volts);
+  if (volts >= 1.0) {
+    manager(strip.Color(255, 0, 255), 0); 
+    Serial.println("threshold");  
+    }
+    else{
+      manager(strip.Color(0, 0, 0), 0); 
+  }
+}
+// via: https://forums.adafruit.com/viewtopic.php?f=47&t=64636
+void manager(uint32_t c, uint8_t wait)
+{
+   int i = 0;
+   while (i < 60)
+   {
+      strip.setPixelColor(i, c);
+      strip.show();
+      i++;
+   }
+   delay(wait);
+}
